@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Grid, ListFilter } from 'lucide-react';
+import { Grid, ListFilter, LogOut } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { SearchBar } from '@/components/ui/SearchBar';
 import { CategoryFilter } from '@/components/ui/CategoryFilter';
@@ -8,6 +8,7 @@ import { myWidgets, categories, tags } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { CreateWidgetModal } from '@/components/widgets/CreateWidgetModal';
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -17,6 +18,7 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [isFiltersVisible, setIsFiltersVisible] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const { signOut } = useAuth();
   
   // Simulate loading state
   useEffect(() => {
@@ -68,11 +70,16 @@ export default function Dashboard() {
     <MainLayout>
       <div className="space-y-8 animate-fade-in">
         {/* Page Header */}
-        <div>
-          <h1 className="text-3xl font-semibold">My Widgets</h1>
-          <p className="text-muted-foreground mt-2">
-            Manage and organize your Elementor widgets collection
-          </p>
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <div className="flex items-center gap-4">
+            <Button onClick={() => setIsCreateModalOpen(true)}>
+              Add Widget
+            </Button>
+            <Button variant="outline" size="icon" onClick={signOut}>
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
         
         {/* Search and Filters */}

@@ -218,17 +218,17 @@ export function AddWidgetForm({ categories, tags, onSuccess }: AddWidgetFormProp
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
+            <SelectValue placeholder="Select a category" />
+          </SelectTrigger>
                   </FormControl>
-                  <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+          <SelectContent>
+            {categories.map((category) => (
+              <SelectItem key={category.id} value={category.id}>
+                {category.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
                 <FormDescription>
                   Choose a category for your widget.
                 </FormDescription>
@@ -236,8 +236,8 @@ export function AddWidgetForm({ categories, tags, onSuccess }: AddWidgetFormProp
               </FormItem>
             )}
           />
-        </div>
-
+      </div>
+      
         <FormField
           control={form.control}
           name="description"
@@ -266,7 +266,7 @@ export function AddWidgetForm({ categories, tags, onSuccess }: AddWidgetFormProp
             <FormItem>
               <FormLabel>Elementor Code</FormLabel>
               <FormControl>
-                <Textarea 
+        <Textarea
                   placeholder="Paste your Elementor code here..." 
                   className="min-h-[200px] font-mono"
                   {...field} 
@@ -285,17 +285,17 @@ export function AddWidgetForm({ categories, tags, onSuccess }: AddWidgetFormProp
             Cancel
           </Button>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? (
+        {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Creating...
               </>
             ) : (
               "Create Widget"
-            )}
-          </Button>
+        )}
+      </Button>
         </div>
-      </form>
+    </form>
     </Form>
   );
 }
