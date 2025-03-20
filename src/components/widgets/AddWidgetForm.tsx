@@ -1,6 +1,6 @@
-
 import { useState } from 'react';
-import { Upload, Tag, Plus, X } from 'lucide-react';
+import { Upload, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,6 +15,8 @@ import {
 import { cn } from '@/lib/utils';
 import { Category, Tag as TagType } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { createWidget } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 interface AddWidgetFormProps {
   categories: Category[];
@@ -23,6 +25,7 @@ interface AddWidgetFormProps {
 
 export function AddWidgetForm({ categories, tags }: AddWidgetFormProps) {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [thumbnail, setThumbnail] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string>('');
@@ -95,31 +98,51 @@ export function AddWidgetForm({ categories, tags }: AddWidgetFormProps) {
     setIsSubmitting(true);
     
     try {
-      // Here you would typically send the data to your backend
-      // For demo purposes, let's simulate a successful submission
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      let thumbnail_url = null;
+      
+      // Upload thumbnail if exists
+      if (thumbnail) {
+        const fileExt = thumbnail.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `widget-thumbnails/${fileName}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('widgets')
+          .upload(filePath, thumbnail);
+          
+        if (uploadError) throw uploadError;
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from('widgets')
+          .getPublicUrl(filePath);
+          
+        thumbnail_url = publicUrl;
+      }
+      
+      // Create widget
+      await createWidget({
+        name: formData.name,
+        description: formData.description,
+        thumbnail_url,
+        elementor_code: formData.elementorCode,
+        is_public: formData.isPublic,
+        categories: formData.category ? [formData.category] : [],
+        tags: selectedTags
+      });
       
       toast({
         title: "Widget created",
         description: "Your widget has been successfully created",
       });
       
-      // Reset form
-      setFormData({
-        name: '',
-        category: '',
-        description: '',
-        elementorCode: '',
-        isPublic: false
-      });
-      setThumbnail(null);
-      setThumbnailPreview('');
-      setSelectedTags([]);
+      // Redirect to dashboard
+      navigate('/');
       
     } catch (error) {
+      console.error('Error creating widget:', error);
       toast({
         title: "Error",
-        description: "Failed to create widget. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to create widget. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -220,6 +243,33 @@ export function AddWidgetForm({ categories, tags }: AddWidgetFormProps) {
         </Select>
       </div>
       
+      {/* Description */}
+      <div className="space-y-2">
+        <Label htmlFor="description">Description</Label>
+        <Textarea
+          id="description"
+          name="description"
+          value={formData.description}
+          onChange={handleChange}
+          placeholder="Enter widget description"
+          className="glass-input min-h-[100px]"
+        />
+      </div>
+      
+      {/* Elementor Code */}
+      <div className="space-y-2">
+        <Label htmlFor="elementorCode">Elementor Code</Label>
+        <Textarea
+          id="elementorCode"
+          name="elementorCode"
+          value={formData.elementorCode}
+          onChange={handleChange}
+          placeholder="Paste your Elementor widget code here"
+          className="glass-input min-h-[200px] font-mono"
+          required
+        />
+      </div>
+      
       {/* Tags */}
       <div className="space-y-2">
         <Label>Tags</Label>
@@ -253,13 +303,13 @@ export function AddWidgetForm({ categories, tags }: AddWidgetFormProps) {
               return (
                 <span
                   key={tagId}
-                  className="flex items-center gap-1.5 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm"
+                  className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-full text-sm"
                 >
                   {tagName}
                   <button
                     type="button"
                     onClick={() => handleRemoveTag(tagId)}
-                    className="hover:bg-primary/20 rounded-full p-0.5"
+                    className="hover:text-primary/80"
                   >
                     <X size={14} />
                   </button>
@@ -276,77 +326,46 @@ export function AddWidgetForm({ categories, tags }: AddWidgetFormProps) {
             onChange={(e) => setCustomTag(e.target.value)}
             placeholder="Add custom tag"
             className="glass-input"
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleAddCustomTag();
+              }
+            }}
           />
           <Button
             type="button"
             variant="outline"
-            size="icon"
             onClick={handleAddCustomTag}
             disabled={!customTag.trim()}
-            className="glass-panel hover:bg-primary/10 hover:text-primary"
           >
-            <Plus size={16} />
+            Add
           </Button>
         </div>
       </div>
       
-      {/* Description */}
-      <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
-        <Textarea
-          id="description"
-          name="description"
-          value={formData.description}
-          onChange={handleChange}
-          placeholder="Describe your widget"
-          className="min-h-[100px] glass-input"
-        />
-      </div>
-      
-      {/* Elementor Code */}
-      <div className="space-y-2">
-        <Label htmlFor="elementorCode">Elementor JSON Code</Label>
-        <Textarea
-          id="elementorCode"
-          name="elementorCode"
-          value={formData.elementorCode}
-          onChange={handleChange}
-          placeholder='Paste your Elementor JSON code here. Example: {"id":"123","elements":[...]}'
-          className="min-h-[200px] font-mono text-sm glass-input"
-          required
-        />
-      </div>
-      
-      {/* Public Toggle */}
+      {/* Visibility */}
       <div className="flex items-center space-x-2">
         <input
+          type="checkbox"
           id="isPublic"
           name="isPublic"
-          type="checkbox"
           checked={formData.isPublic}
           onChange={handleCheckboxChange}
-          className="rounded bg-secondary border-white/10 focus:ring-primary focus:ring-offset-0"
+          className="rounded border-white/20 bg-white/5"
         />
-        <Label htmlFor="isPublic">Share with community</Label>
+        <Label htmlFor="isPublic" className="text-sm font-normal">
+          Make this widget public
+        </Label>
       </div>
       
       {/* Submit Button */}
-      <Button 
-        type="submit" 
+      <Button
+        type="submit"
+        className="w-full"
         disabled={isSubmitting}
-        className="w-full sm:w-auto transition-all duration-300 relative overflow-hidden"
       >
-        {isSubmitting ? (
-          <span className="flex items-center">
-            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            Creating Widget...
-          </span>
-        ) : (
-          <span>Create Widget</span>
-        )}
+        {isSubmitting ? 'Creating...' : 'Create Widget'}
       </Button>
     </form>
   );
