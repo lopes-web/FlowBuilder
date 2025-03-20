@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Grid, ListFilter } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
@@ -8,6 +7,7 @@ import { WidgetCard } from '@/components/ui/WidgetCard';
 import { myWidgets, categories, tags } from '@/lib/data';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { CreateWidgetModal } from '@/components/widgets/CreateWidgetModal';
 
 export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -16,6 +16,7 @@ export default function Dashboard() {
   const [filteredWidgets, setFilteredWidgets] = useState(myWidgets);
   const [isLoading, setIsLoading] = useState(true);
   const [isFiltersVisible, setIsFiltersVisible] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   
   // Simulate loading state
   useEffect(() => {
@@ -180,7 +181,10 @@ export default function Dashboard() {
                     Clear filters
                   </Button>
                 ) : (
-                  <Button className="mt-4">
+                  <Button 
+                    className="mt-4"
+                    onClick={() => setIsCreateModalOpen(true)}
+                  >
                     Create Widget
                   </Button>
                 )}
@@ -189,6 +193,11 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      <CreateWidgetModal 
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+      />
     </MainLayout>
   );
 }
