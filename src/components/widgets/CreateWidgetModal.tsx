@@ -42,21 +42,23 @@ export function CreateWidgetModal({ isOpen, onClose }: CreateWidgetModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="max-w-[800px] h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Create Widget</DialogTitle>
+          <DialogTitle className="text-2xl font-bold">Create New Widget</DialogTitle>
         </DialogHeader>
-        {isLoading ? (
-          <div className="flex items-center justify-center p-8">
-            <Loader2 className="h-8 w-8 animate-spin" />
-          </div>
-        ) : (
-          <AddWidgetForm 
-            categories={categories}
-            tags={tags}
-            onSuccess={onClose}
-          />
-        )}
+        <div className="flex-1 overflow-y-auto pr-6 -mr-6">
+          {isLoading ? (
+            <div className="flex items-center justify-center h-full">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          ) : (
+            <AddWidgetForm 
+              categories={categories}
+              tags={tags}
+              onSuccess={onClose}
+            />
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   )

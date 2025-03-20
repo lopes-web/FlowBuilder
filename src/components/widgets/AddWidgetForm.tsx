@@ -27,6 +27,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form"
 
 const formSchema = z.object({
@@ -40,6 +41,8 @@ const formSchema = z.object({
     required_error: "Please select a category.",
   }),
   tag_ids: z.array(z.string()).optional(),
+  elementor_code: z.string().optional(),
+  is_public: z.boolean().default(false),
 })
 
 interface AddWidgetFormProps {
@@ -71,6 +74,8 @@ export function AddWidgetForm({ categories, tags, onSuccess }: AddWidgetFormProp
       description: "",
       category_id: "",
       tag_ids: [],
+      elementor_code: "",
+      is_public: false,
     },
   })
 
@@ -157,8 +162,8 @@ export function AddWidgetForm({ categories, tags, onSuccess }: AddWidgetFormProp
         name: values.name,
         description: values.description,
         thumbnail_url,
-        elementor_code: values.elementorCode,
-        is_public: values.isPublic,
+        elementor_code: values.elementor_code,
+        is_public: values.is_public,
         categories: values.category_id ? [values.category_id] : [],
         tags: values.tag_ids
       });
@@ -185,229 +190,111 @@ export function AddWidgetForm({ categories, tags, onSuccess }: AddWidgetFormProp
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        {/* Thumbnail Upload */}
-        <div className="space-y-2">
-          <Label htmlFor="thumbnail">Widget Thumbnail</Label>
-          <div className="flex items-center gap-4">
-            <div 
-              className={cn(
-                "relative flex flex-col items-center justify-center w-48 h-32 rounded-lg border-2 border-dashed",
-                "transition-colors duration-200 cursor-pointer overflow-hidden",
-                thumbnailPreview ? "border-primary/30" : "border-white/10 hover:border-white/20"
-              )}
-            >
-              <input
-                id="thumbnail"
-                type="file"
-                accept="image/*"
-                onChange={handleThumbnailChange}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              />
-              
-              {thumbnailPreview ? (
-                <div className="relative w-full h-full">
-                  <img 
-                    src={thumbnailPreview} 
-                    alt="Thumbnail preview" 
-                    className="w-full h-full object-cover"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setThumbnail(null);
-                      setThumbnailPreview('');
-                    }}
-                    className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm text-white p-1 rounded-full"
-                  >
-                    <X size={12} />
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <Upload size={24} className="text-muted-foreground mb-2" />
-                  <span className="text-sm text-muted-foreground">
-                    Upload thumbnail
-                  </span>
-                  <span className="text-xs text-muted-foreground mt-1">
-                    Recommended size: 600×400
-                  </span>
-                </>
-              )}
-            </div>
-            
-            <div className="text-sm text-muted-foreground">
-              <p>A thumbnail helps users quickly identify your widget.</p>
-              <p className="mt-1">We recommend using a clear, high-quality image that showcases your widget's appearance.</p>
-            </div>
-          </div>
-        </div>
-        
-        {/* Widget Name */}
-        <div className="space-y-2">
-          <Label htmlFor="name">Widget Name</Label>
-          <Input
-            id="name"
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="grid grid-cols-2 gap-6">
+          <FormField
+            control={form.control}
             name="name"
-            value={formData.name}
-            onChange={handleChange}
-            placeholder="Enter widget name"
-            className="glass-input"
-            required
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="Widget name" {...field} />
+                </FormControl>
+                <FormDescription>
+                  A unique name for your widget.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="category_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Category</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  Choose a category for your widget.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
           />
         </div>
-        
-        {/* Category */}
-        <div className="space-y-2">
-          <Label htmlFor="category">Category</Label>
-          <Select
-            value={formData.category}
-            onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
-          >
-            <SelectTrigger className="glass-input">
-              <SelectValue placeholder="Select a category" />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map((category) => (
-                <SelectItem key={category.id} value={category.id}>
-                  {category.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        
-        {/* Description */}
-        <div className="space-y-2">
-          <Label htmlFor="description">Description</Label>
-          <Textarea
-            id="description"
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            placeholder="Enter widget description"
-            className="glass-input min-h-[100px]"
-          />
-        </div>
-        
-        {/* Elementor Code */}
-        <div className="space-y-2">
-          <Label htmlFor="elementorCode">Elementor Code</Label>
-          <Textarea
-            id="elementorCode"
-            name="elementorCode"
-            value={formData.elementorCode}
-            onChange={handleChange}
-            placeholder="Paste your Elementor widget code here"
-            className="glass-input min-h-[200px] font-mono"
-            required
-          />
-        </div>
-        
-        {/* Tags */}
-        <div className="space-y-2">
-          <Label>Tags</Label>
-          <div className="flex flex-wrap gap-2 mb-3">
-            {tags.map((tag) => (
-              <button
-                key={tag.id}
-                type="button"
-                onClick={() => handleTagSelect(tag.id)}
-                className={cn(
-                  "px-3 py-1.5 rounded-full text-sm transition-colors duration-200",
-                  selectedTags.includes(tag.id)
-                    ? "bg-primary/10 text-primary"
-                    : "bg-secondary text-muted-foreground hover:bg-accent"
-                )}
-              >
-                {tag.name}
-              </button>
-            ))}
-          </div>
-          
-          {/* Selected Tags */}
-          {selectedTags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-3 mb-4">
-              {selectedTags.map((tagId) => {
-                const tag = tags.find((t) => t.id === tagId);
-                const tagName = tag ? tag.name : tagId.replace('new-', '').split('-').map(word => 
-                  word.charAt(0).toUpperCase() + word.slice(1)
-                ).join(' ');
-                
-                return (
-                  <span
-                    key={tagId}
-                    className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-full text-sm"
-                  >
-                    {tagName}
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveTag(tagId)}
-                      className="hover:text-primary/80"
-                    >
-                      <X size={14} />
-                    </button>
-                  </span>
-                );
-              })}
-            </div>
+
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description</FormLabel>
+              <FormControl>
+                <Textarea 
+                  placeholder="Describe your widget..." 
+                  className="min-h-[100px]"
+                  {...field} 
+                />
+              </FormControl>
+              <FormDescription>
+                A detailed description of what your widget does.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
           )}
-          
-          {/* Custom Tag Input */}
-          <div className="flex gap-2">
-            <Input
-              value={customTag}
-              onChange={(e) => setCustomTag(e.target.value)}
-              placeholder="Add custom tag"
-              className="glass-input"
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleAddCustomTag();
-                }
-              }}
-            />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleAddCustomTag}
-              disabled={!customTag.trim()}
-            >
-              Add
-            </Button>
-          </div>
-        </div>
-        
-        {/* Visibility */}
-        <div className="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            id="isPublic"
-            name="isPublic"
-            checked={formData.isPublic}
-            onChange={handleCheckboxChange}
-            className="rounded border-white/20 bg-white/5"
-          />
-          <Label htmlFor="isPublic" className="text-sm font-normal">
-            Make this widget public
-          </Label>
-        </div>
-        
-        {/* Submit Button */}
-        <Button
-          type="submit"
-          className="w-full"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Creating...
-            </>
-          ) : (
-            "Create Widget"
+        />
+
+        <FormField
+          control={form.control}
+          name="elementor_code"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Elementor Code</FormLabel>
+              <FormControl>
+                <Textarea 
+                  placeholder="Paste your Elementor code here..." 
+                  className="min-h-[200px] font-mono"
+                  {...field} 
+                />
+              </FormControl>
+              <FormDescription>
+                The Elementor code that will be used to render your widget.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
           )}
-        </Button>
+        />
+
+        <div className="flex justify-end space-x-4 pt-4">
+          <Button type="button" variant="outline" onClick={onSuccess}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              "Create Widget"
+            )}
+          </Button>
+        </div>
       </form>
     </Form>
   );
